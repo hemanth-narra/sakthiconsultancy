@@ -10,6 +10,7 @@ FROM nginx:alpine
 COPY index.html /usr/share/nginx/html/
 COPY styles.css /usr/share/nginx/html/
 COPY script.js /usr/share/nginx/html/
+COPY links/ /usr/share/nginx/html/links/
 
 # Expose port 80 to the outside world
 EXPOSE 80
