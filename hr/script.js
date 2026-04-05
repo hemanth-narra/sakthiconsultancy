@@ -64,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     showView('admin-view');
                     fetchAdminReports();
                     loadEmployeesDropdown();
+                    loadAllTasks();
                 } else {
                     showView('employee-view');
                     renderEmployeeProfile();
@@ -88,6 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderEmployeeProfile() {
         document.getElementById('profile-name').textContent = currentUser.name;
         document.getElementById('profile-designation').textContent = currentUser.designation || 'Employee';
+        document.getElementById('profile-mobile').textContent = currentUser.mobile || 'N/A';
         document.getElementById('profile-joined').textContent = currentUser.joining_date || 'N/A';
     }
 
@@ -311,6 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const payload = {
             name: document.getElementById('new-emp-name').value,
             email: document.getElementById('new-emp-email').value,
+            mobile: document.getElementById('new-emp-mobile').value,
             password: document.getElementById('new-emp-pass').value,
             designation: document.getElementById('new-emp-desig').value,
             joining_date: document.getElementById('new-emp-date').value
@@ -405,6 +408,72 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } catch (err) {
             tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Failed to load schedule</td></tr>';
+        }
+    }
+
+    async function loadAllTasks() {
+        const tbody = document.getElementById('all-tasks-tbody');
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center">Loading...</td></tr>';
+        
+        try {
+            const res = await fetch('/hr/api/tasks');
+            const data = await res.json();
+            tbody.innerHTML = '';
+            
+            if (data.tasks.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">No active tasks found in the pipeline.</td></tr>';
+                return;
+            }
+
+            data.tasks.forEach(t => {
+                const statusBadgeMap = {
+                    'Yet to start': 'status-absent',
+                    'Work-in-progress': 'status-wip',
+                    'Completed': 'status-completed'
+                };
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <span class="time-slot-label">${t.date}</span><br>
+                        <small style="color: #666;">${t.hour_slot}</small>
+                    </td>
+                    <td><strong>${t.employee_name}</strong></td>
+                    <td>
+                        <div class="admin-task-cell">${t.admin_task}</div>
+                        ${t.remarks ? `<p style="font-size: 0.85rem; color: #666; margin-top: 0.5rem;"><b>Note:</b> ${t.remarks}</p>` : ''}
+                    </td>
+                    <td><span class="status-badge ${statusBadgeMap[t.status] || ''}">${t.status}</span></td>
+                    <td>
+                        ${t.status === 'Completed' ? 
+                          `<button class="btn btn-primary generate-invoice-btn" data-id="${t.id}" style="font-size:0.75rem; padding: 0.4rem 0.8rem;">Generate Invoice</button>` 
+                          : `<span style="font-size:0.8rem; color:#999;">Pending Completion</span>`}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.querySelectorAll('.generate-invoice-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const taskId = e.target.dataset.id;
+                    try {
+                        const res = await fetch('/hr/api/tasks/invoice', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ task_id: taskId })
+                        });
+                        if (res.ok) {
+                            loadAllTasks(); // Reload immediately so it disappears!
+                            fetchAdminReports(); // Also refresh the side report counts if needed
+                        }
+                    } catch (err) {
+                        alert("Failed to archive task");
+                    }
+                });
+            });
+
+        } catch (err) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Failed to load tasks</td></tr>';
         }
     }
 });

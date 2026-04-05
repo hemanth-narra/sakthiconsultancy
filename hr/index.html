@@ -81,6 +81,7 @@
                         <h2 id="profile-name">Loading...</h2>
                         <p class="designation" id="profile-designation">Loading...</p>
                         <div class="meta-info">
+                            <span><i class="fa-solid fa-phone"></i> Mobile: <span id="profile-mobile">-</span></span>
                             <span><i class="fa-regular fa-calendar-alt"></i> Joined: <span id="profile-joined">-</span></span>
                         </div>
                     </div>
@@ -134,13 +135,41 @@
             
             <!-- Admin Tabs -->
             <div class="admin-tabs mb-4">
-                <button class="btn tab-btn active" data-target="admin-reports-tab">View Daily Reports</button>
+                <button class="btn tab-btn active" data-target="admin-tasks-tab">Tasks Overview</button>
+                <button class="btn tab-btn" data-target="admin-reports-tab">View Daily Reports</button>
                 <button class="btn tab-btn" data-target="admin-assign-tab">Assign Tasks</button>
                 <button class="btn tab-btn" data-target="admin-employee-tab">Create Employee</button>
             </div>
 
+            <!-- Sub View: All Tasks Pipeline -->
+            <div id="admin-tasks-tab" class="glass-card admin-card tab-content active-tab">
+                <div class="dashboard-header admin-header">
+                    <div>
+                        <h2>Overarching Task Pipeline</h2>
+                        <p>Track statuses and generate invoices for completed works</p>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="data-table form-table">
+                        <thead>
+                            <tr>
+                                <th width="15%">Date & Time</th>
+                                <th width="15%">Employee</th>
+                                <th width="35%">Assigned Task</th>
+                                <th width="15%">Status</th>
+                                <th width="20%">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="all-tasks-tbody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- Sub View: Reports -->
-            <div id="admin-reports-tab" class="glass-card admin-card tab-content active-tab">
+            <div id="admin-reports-tab" class="glass-card admin-card tab-content">
                 <div class="dashboard-header admin-header">
                     <div>
                         <h2>Employee Efficiency Reports</h2>
@@ -235,6 +264,10 @@
                         <div class="form-group">
                             <label>Email Address</label>
                             <input type="email" id="new-emp-email" class="form-control" required placeholder="john@sakthiconsultancy.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Mobile Number</label>
+                            <input type="text" id="new-emp-mobile" class="form-control" required placeholder="+91 9000000000">
                         </div>
                         <div class="form-group">
                             <label>Temporary Password</label>

@@ -45,6 +45,7 @@ const db = new sqlite3.Database('./database.sqlite', (err) => {
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 email TEXT UNIQUE NOT NULL,
+                mobile TEXT,
                 password_hash TEXT NOT NULL,
                 role TEXT NOT NULL DEFAULT 'employee',
                 designation TEXT,
@@ -60,6 +61,7 @@ const db = new sqlite3.Database('./database.sqlite', (err) => {
                 admin_task TEXT,
                 status TEXT DEFAULT 'Yet to start',
                 remarks TEXT,
+                invoiced BOOLEAN DEFAULT 0,
                 UNIQUE(employee_id, date, hour_slot),
                 FOREIGN KEY (employee_id) REFERENCES employees (id)
             )`);
@@ -70,8 +72,8 @@ const db = new sqlite3.Database('./database.sqlite', (err) => {
                     const adminHash = await bcrypt.hash('Sakthi@123', 10);
                     const todayDate = new Date().toISOString().split('T')[0];
 
-                    const stmt = db.prepare(`INSERT INTO employees (name, email, password_hash, role, designation, joining_date) VALUES (?, ?, ?, ?, ?, ?)`);
-                    stmt.run('Administrator', 'admin@sakthiconsultancy.com', adminHash, 'admin', 'System Administrator', todayDate);
+                    const stmt = db.prepare(`INSERT INTO employees (name, email, password_hash, role, mobile, designation, joining_date) VALUES (?, ?, ?, ?, ?, ?, ?)`);
+                    stmt.run('Administrator', 'admin@sakthiconsultancy.com', adminHash, 'admin', '0000000000', 'System Administrator', todayDate);
                     stmt.finalize();
                     console.log('Seeded master admin@sakthiconsultancy.com');
                 }
@@ -125,7 +127,7 @@ app.post('/hr/api/auth/login', (req, res) => {
 });
 
 app.get('/hr/api/auth/me', authenticateToken, (req, res) => {
-    db.get(`SELECT id, name, email, role, designation, joining_date FROM employees WHERE id = ?`, [req.user.id], (err, row) => {
+    db.get(`SELECT id, name, email, mobile, role, designation, joining_date FROM employees WHERE id = ?`, [req.user.id], (err, row) => {
         if (err || !row) return res.status(404).json({ error: 'User not found' });
         res.json({ user: row });
     });
@@ -146,11 +148,11 @@ app.get('/hr/api/employees', authenticateToken, restrictToAdmin, (req, res) => {
 
 // 2b. CREATE EMPLOYEE (Admin Only)
 app.post('/hr/api/employees', authenticateToken, restrictToAdmin, async (req, res) => {
-    const { name, email, password, designation, joining_date } = req.body;
+    const { name, email, password, mobile, designation, joining_date } = req.body;
     try {
         const hash = await bcrypt.hash(password, 10);
-        db.run(`INSERT INTO employees (name, email, password_hash, role, designation, joining_date) VALUES (?, ?, ?, 'employee', ?, ?)`,
-        [name, email, hash, designation, joining_date], function(err) {
+        db.run(`INSERT INTO employees (name, email, password_hash, role, mobile, designation, joining_date) VALUES (?, ?, ?, 'employee', ?, ?, ?)`,
+        [name, email, hash, mobile, designation, joining_date], function(err) {
             if (err) {
                 if (err.message.includes('UNIQUE constraint failed')) {
                     return res.status(400).json({ error: 'Email already exists' });
@@ -254,6 +256,33 @@ app.get('/hr/api/reports', authenticateToken, restrictToAdmin, (req, res) => {
             status: r.hours_logged === 0 ? 'Absent/No Logs' : `${r.tasks_completed} Tasks Completed`
         }));
         res.json({ date, reports });
+    });
+});
+
+// 7. GET ALL OVERARCHING TASKS (Admin tasks tab)
+app.get('/hr/api/tasks', authenticateToken, restrictToAdmin, (req, res) => {
+    // Return all tasks that have been assigned by admin (admin_task is not null or empty) and not yet invoiced.
+    const query = `
+        SELECT h.id, h.date, h.hour_slot, h.admin_task, h.status, h.remarks, e.name as employee_name
+        FROM hourly_schedule h
+        JOIN employees e ON h.employee_id = e.id
+        WHERE h.admin_task IS NOT NULL 
+          AND h.admin_task != '' 
+          AND h.invoiced = 0
+        ORDER BY h.date DESC, h.hour_slot ASC
+    `;
+    db.all(query, [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ tasks: rows });
+    });
+});
+
+// 8. ARCHIVE/INVOICE A TASK
+app.post('/hr/api/tasks/invoice', authenticateToken, restrictToAdmin, (req, res) => {
+    const { task_id } = req.body;
+    db.run(`UPDATE hourly_schedule SET invoiced = 1 WHERE id = ?`, [task_id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Task marked as invoiced' });
     });
 });
 
