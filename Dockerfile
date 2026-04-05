@@ -1,20 +1,19 @@
-# Use the official Nginx image as a lightweight base
-FROM nginx:alpine
+# Use official Node.js image
+FROM node:18-alpine
 
-# Use a non-root user (good practice for security)
-# The default nginx image runs as root unless configured otherwise
-# To keep this simple and standard for static files, we'll stick to the base setup,
-# but we ensure the files are copied correctly.
+# Create app directory
+WORKDIR /usr/src/app
 
-# Copy the static website files to the default Nginx public directory
-COPY index.html /usr/share/nginx/html/
-COPY styles.css /usr/share/nginx/html/
-COPY script.js /usr/share/nginx/html/
-COPY links/ /usr/share/nginx/html/links/
-COPY invoice/ /usr/share/nginx/html/invoice/
+# Install app dependencies
+# A wildcard is used to ensure both package.json AND package-lock.json are copied
+COPY package*.json ./
+RUN npm install
 
-# Expose port 80 to the outside world
+# Bundle app source
+COPY . .
+
+# Expose port 80
 EXPOSE 80
 
-# The default command of the nginx image automatically starts the web server.
-# No need to specify CMD or ENTRYPOINT explicitly.
+# Start the Node.js server
+CMD [ "npm", "start" ]
