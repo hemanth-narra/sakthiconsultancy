@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sakthi Consultancy | Invoice Maker</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- html2pdf -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        :root {
+            --primary-blue:  #061B3B;
+            --primary-green: #C5F805;
+            --text-main:     #333333;
+            --text-muted:    #666666;
+            --bg-main:       #F4F7F6;
+            --bg-white:      #FFFFFF;
+            --border-color:  #E2E8F0;
+            --font-heading: 'Outfit', sans-serif;
+            --font-body:    'Inter', sans-serif;
+            --shadow-sm:   0 2px 4px rgba(0, 0, 0, 0.05);
+            --shadow-md:   0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-lg:   0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: var(--font-body);
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* --- LOGIN OVERLAY --- */
+        #login-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--primary-blue);
+            display: flex;
+            align-items: center; justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+        .login-box {
+            background: var(--bg-white);
+            padding: 3rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            width: 100%; max-width: 400px;
+            text-align: center;
+        }
+        .login-logo {
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 2rem;
+        }
+        .logo-mark { position: relative; width: 40px; height: 40px; }
+        .mark-blue { position: absolute; bottom: 0; left: 0; width: 25px; height: 30px; background-color: var(--primary-blue); border-radius: 2px 10px 2px 2px; transform: skewX(-15deg); }
+        .mark-green { position: absolute; top: 0; right: 0; width: 18px; height: 18px; background-color: var(--primary-green); border-radius: 2px 10px 2px 2px; transform: skewX(-15deg); }
+        
+        .login-box h2 { font-family: var(--font-heading); color: var(--primary-blue); margin-bottom: 1.5rem; }
+        .login-input {
+            width: 100%; padding: 0.75rem 1rem; margin-bottom: 1rem;
+            border: 1px solid var(--border-color); border-radius: 6px;
+            font-family: var(--font-body); outline: none;
+        }
+        .login-input:focus { border-color: var(--primary-blue); }
+        .btn {
+            background-color: var(--primary-blue); color: #fff;
+            border: none; padding: 0.75rem 1.5rem; border-radius: 6px;
+            font-family: var(--font-heading); font-weight: 600; cursor: pointer;
+            width: 100%; transition: background-color 0.2s;
+        }
+        .btn:hover { background-color: #0a2652; }
+        .error-msg { color: #e74c3c; font-size: 0.85rem; margin-top: 1rem; display: none; }
+
+        /* --- APP HEADER --- */
+        .app-header {
+            background: var(--bg-white); padding: 1rem 2rem;
+            box-shadow: var(--shadow-sm); display: flex; justify-content: space-between; align-items: center;
+        }
+        .app-title { font-family: var(--font-heading); font-weight: 700; color: var(--primary-blue); display: flex; align-items: center; gap: 0.5rem;}
+        
+        /* --- MAIN LAYOUT --- */
+        .container {
+            display: flex; flex: 1; overflow: hidden;
+        }
+        .form-panel {
+            width: 450px; background: var(--bg-white); border-right: 1px solid var(--border-color);
+            padding: 2rem; overflow-y: auto; height: calc(100vh - 70px);
+        }
+        .preview-panel {
+            flex: 1; padding: 2rem; overflow-y: auto; height: calc(100vh - 70px);
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        /* --- FORM STYLES --- */
+        .form-section { margin-bottom: 2rem; }
+        .form-section h3 { font-family: var(--font-heading); font-size: 1.1rem; color: var(--primary-blue); margin-bottom: 1rem; border-bottom: 2px solid var(--primary-green); padding-bottom: 0.5rem; display: inline-block;}
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem; font-weight: 500;}
+        .form-control { width: 100%; padding: 0.6rem; border: 1px solid var(--border-color); border-radius: 4px; font-family: var(--font-body); font-size: 0.9rem;}
+        .form-row { display: flex; gap: 1rem; }
+        .form-row .form-group { flex: 1; }
+        
+        .item-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem; align-items: flex-start; background: var(--bg-main); padding: 0.5rem; border-radius: 6px;}
+        .item-row input { flex: 1 1 30%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.85rem;}
+        .item-row input.desc { flex: 1 1 80%; }
+        .item-row input.num { width: auto;}
+        .btn-remove-item { background: transparent; border: none; color: #e74c3c; cursor: pointer; padding: 0.5rem; flex: 0 0 auto; margin-left: auto; display: flex; align-items: center; justify-content: center;}
+        .btn-add-item { background: var(--primary-green); color: var(--primary-blue); border: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.85rem; cursor: pointer; font-weight: 600; margin-top: 0.5rem;}
+        .btn-generate { background: var(--primary-blue); color: #fff; border: none; padding: 1rem; border-radius: 6px; width: 100%; font-family: var(--font-heading); font-weight: 600; font-size: 1.1rem; cursor: pointer; margin-top: 2rem;}
+
+        /* --- INVOICE PREVIEW (A4 aspect ratio) --- */
+        .invoice-wrapper {
+            background: var(--bg-white);
+            width: 800px; /* Base size for preview */
+            min-height: 1131px; /* A4 Ratio */
+            box-shadow: var(--shadow-lg);
+            position: relative;
+        }
+        
+        /* The actual invoice content we render to PDF */
+        #invoice-document {
+            padding: 3rem;
+            color: var(--text-main);
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Invoice Header */
+        .inv-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid var(--border-color); padding-bottom: 1.5rem; margin-bottom: 2rem;}
+        .inv-branding .inv-logo { display:flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;}
+        .inv-branding h1 { font-family: var(--font-heading); font-size: 1.8rem; color: var(--primary-blue); font-weight: 900; letter-spacing: 1px;}
+        .inv-branding p { font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; max-width: 250px;}
+        .inv-title-sec { text-align: right; }
+        .inv-title-sec h2 { font-family: var(--font-heading); font-size: 2.5rem; color: var(--primary-blue); text-transform: uppercase; letter-spacing: 2px; line-height: 1;}
+        .inv-meta { margin-top: 1rem; font-size: 0.9rem;}
+        .inv-meta-row { display: flex; justify-content: flex-end; gap: 1rem; margin-bottom: 0.2rem;}
+        .inv-meta-label { font-weight: 600; color: var(--text-muted);}
+
+        /* Invoice Addresses */
+        .inv-addresses { display: flex; justify-content: space-between; margin-bottom: 2.5rem; }
+        .inv-address-block { width: 45%; }
+        .inv-address-block h4 { font-family: var(--font-heading); color: var(--primary-blue); font-size: 1rem; border-bottom: 2px solid var(--primary-green); display: inline-block; padding-bottom: 0.2rem; margin-bottom: 0.5rem;}
+        .inv-address-content { font-size: 0.95rem; line-height: 1.5; color: var(--text-main); }
+        .client-name { font-weight: 700; font-size: 1.1rem; color: var(--primary-blue);}
+
+        /* Invoice Table */
+        .inv-table { width: 100%; border-collapse: collapse; margin-bottom: 2rem; }
+        .inv-table th { background-color: var(--primary-blue); color: var(--bg-white); font-family: var(--font-heading); font-weight: 600; padding: 0.8rem; text-align: left; font-size: 0.9rem;}
+        .inv-table th.right { text-align: right; }
+        .inv-table td { padding: 0.8rem; border-bottom: 1px solid var(--border-color); font-size: 0.95rem; }
+        .inv-table td.right { text-align: right; }
+        
+        /* Invoice Totals */
+        .inv-totals { display: flex; justify-content: flex-end; margin-bottom: 3rem;}
+        .inv-totals-box { width: 350px;}
+        .inv-totals-row { display: flex; justify-content: space-between; padding: 0.5rem 0; font-size: 0.95rem;}
+        .inv-totals-row.grand-total { border-top: 2px solid var(--primary-blue); font-weight: 700; font-size: 1.2rem; margin-top: 0.5rem; padding-top: 0.5rem;}
+
+        /* Invoice Footer */
+        .inv-footer { margin-top: auto; border-top: 1px solid var(--border-color); padding-top: 1rem; display: flex; justify-content: space-between; font-size: 0.85rem;}
+        .payment-info { color: var(--text-muted); }
+        .payment-info strong { color: var(--primary-blue);}
+        .auth-sig { text-align: right; }
+        .sig-line { width: 150px; border-bottom: 1px solid var(--primary-blue); margin-bottom: 0.5rem;}
+
+    </style>
+</head>
+<body>
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-overlay">
+        <div class="login-box">
+            <div class="login-logo">
+                <div class="logo-mark"><span class="mark-blue"></span><span class="mark-green"></span></div>
+            </div>
+            <h2>Invoice Gateway</h2>
+            <input type="text" id="userid" class="login-input" placeholder="User ID">
+            <input type="password" id="password" class="login-input" placeholder="Password">
+            <button class="btn" onclick="checkLogin()">Login</button>
+            <div id="login-error" class="error-msg">Invalid credentials. Access denied.</div>
+        </div>
+    </div>
+
+    <!-- APP WRAPPER -->
+    <header class="app-header">
+        <div class="app-title">
+            <div class="logo-mark" style="width:24px;height:24px;margin-right:8px;"><span class="mark-blue" style="width:16px;height:18px;"></span><span class="mark-green" style="width:11px;height:11px;"></span></div>
+            Sakthi Consultancy | Invoice Maker
+        </div>
+        <button class="btn" style="width:auto; padding: 0.5rem 1rem; font-size: 0.85rem;" onclick="logout()">Logout</button>
+    </header>
+
+    <div class="container">
+        
+        <!-- EDITOR PANEL -->
+        <div class="form-panel">
+            <div class="form-section">
+                <h3>Invoice Details</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Invoice Number</label>
+                        <input type="text" id="f-inv-num" class="form-control" value="INV-001" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="f-inv-date" class="form-control" onchange="updatePreview()">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Due Date (Optional)</label>
+                    <input type="date" id="f-due-date" class="form-control" onchange="updatePreview()">
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Billed To (Client Info)</h3>
+                <div class="form-group">
+                    <label>Client / Company Name</label>
+                    <input type="text" id="f-client-name" class="form-control" placeholder="Acme Corp" oninput="updatePreview()">
+                </div>
+                <div class="form-group">
+                    <label>Address</label>
+                    <textarea id="f-client-addr" class="form-control" rows="3" placeholder="123 Business Rd..." oninput="updatePreview()"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Phone</label>
+                        <input type="text" id="f-client-phone" class="form-control" oninput="updatePreview()" placeholder="+91...">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="f-client-email" class="form-control" oninput="updatePreview()" placeholder="Email">
+                    </div>
+                    <div class="form-group">
+                        <label>GSTIN (Optional)</label>
+                        <input type="text" id="f-client-gstin" class="form-control" oninput="updatePreview()" placeholder="GSTIN">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Line Items</h3>
+                <div id="items-container">
+                    <!-- Default first item -->
+                    <div class="item-row">
+                        <input type="text" class="desc" placeholder="Service Description" value="Consulting Services" oninput="updatePreview()">
+                        <button class="btn-remove-item" onclick="removeItem(this)"><i class="fas fa-trash"></i></button>
+                        <input type="number" class="num qty" placeholder="Qty" value="1" min="1" oninput="updatePreview()">
+                        <input type="number" class="num rate" placeholder="Rate" value="10000" min="0" step="0.01" oninput="updatePreview()">
+                        <input type="number" class="num tax" placeholder="Tax %" value="0" min="0" oninput="updatePreview()" title="Tax % (e.g. 18)">
+                    </div>
+                </div>
+                <button class="btn-add-item" onclick="addItem()"><i class="fas fa-plus"></i> Add Item</button>
+            </div>
+
+            <div class="form-section">
+                <h3>Notes</h3>
+                <div class="form-group">
+                    <label>Additional Notes (Optional)</label>
+                    <textarea id="f-notes" class="form-control" rows="2" placeholder="Thank you for your business!" oninput="updatePreview()"></textarea>
+                </div>
+            </div>
+
+            <button class="btn-generate" onclick="generatePDF()"><i class="fas fa-file-pdf"></i> Download PDF</button>
+        </div>
+
+        <!-- PREVIEW PANEL -->
+        <div class="preview-panel">
+            <div class="invoice-wrapper">
+                <div id="invoice-document">
+                    
+                    <div class="inv-header">
+                        <div class="inv-branding">
+                            <div class="inv-logo">
+                                <div class="logo-mark" style="width:30px;height:30px;"><span class="mark-blue" style="width:20px;height:24px;"></span><span class="mark-green" style="width:14px;height:14px;"></span></div>
+                                <div style="display: flex; flex-direction: column;">
+                                    <h1 style="line-height: 1;">SAKTHI</h1>
+                                    <span style="font-family: var(--font-heading); font-size: 0.55rem; letter-spacing: 3.5px; color: var(--primary-green); text-transform: uppercase; font-weight: 900; margin-top: 2px;">THE GROWING POWER</span>
+                                </div>
+                            </div>
+                            <p><strong>Sakthi Consultancy The Growing Power LLP</strong><br>
+                               LLPIN: ACW-4853<br>
+                               GSTIN: 36AFXFS0409P1Z6<br>
+                               8-3-191/59-60/202, Rama Chandra Nivas, Vengal Rao Nagar, Hyderabad, Telangana 500038
+                            </p>
+                        </div>
+                        <div class="inv-title-sec">
+                            <h2>INVOICE</h2>
+                            <div class="inv-meta">
+                                <div class="inv-meta-row"><span class="inv-meta-label">Invoice #:</span> <span id="p-inv-num">INV-001</span></div>
+                                <div class="inv-meta-row"><span class="inv-meta-label">Date:</span> <span id="p-inv-date"></span></div>
+                                <div class="inv-meta-row" id="p-due-date-row"><span class="inv-meta-label">Due Date:</span> <span id="p-due-date"></span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="inv-addresses">
+                        <div class="inv-address-block">
+                            <h4>Billed To</h4>
+                            <div class="inv-address-content">
+                                <div class="client-name" id="p-client-name">Acme Corp</div>
+                                <div id="p-client-addr">123 Business Rd.</div>
+                                <div id="p-client-phone" style="margin-top: 0.2rem;"></div>
+                                <div id="p-client-email"></div>
+                                <div id="p-client-gstin"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <table class="inv-table">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th class="right">Qty</th>
+                                <th class="right">Rate</th>
+                                <th class="right" id="th-tax">Tax</th>
+                                <th class="right">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="p-items-body">
+                            <!-- Items mapped here via JS -->
+                        </tbody>
+                    </table>
+
+                    <div class="inv-totals">
+                        <div class="inv-totals-box">
+                            <div class="inv-totals-row">
+                                <span>Subtotal:</span>
+                                <span id="p-subtotal">₹0.00</span>
+                            </div>
+                            <div class="inv-totals-row" id="p-tax-total-row">
+                                <span>Total Tax:</span>
+                                <span id="p-tax-total">₹0.00</span>
+                            </div>
+                            <div class="inv-totals-row grand-total">
+                                <span>Total:</span>
+                                <span id="p-total">₹0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top:2rem; font-size: 0.9rem;">
+                        <strong>Notes:</strong><br>
+                        <span id="p-notes" style="color:var(--text-muted)"></span>
+                    </div>
+
+                    <div class="inv-footer">
+                        <div class="payment-info">
+                            <strong>Payment Details</strong><br>
+                            Please make payments via UPI: <strong>7674951792</strong><br>
+                            Sakthi Consultancy
+                        </div>
+                        <div class="auth-sig" style="display: flex; flex-direction: column; align-items: flex-end;">
+                            <div style="font-family: var(--font-heading); font-weight: 700; font-size: 1.1rem; color: var(--primary-blue); margin-bottom: 0.2rem; margin-top: -1rem;">HEMANTH NARRA</div>
+                            <div class="sig-line"></div>
+                            <span style="font-weight: 600;">Authorized Signatory</span>
+                            <span style="font-size: 0.9rem;">Team Lead Manager</span>
+                            <span style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem; font-style: italic;">(Valid for digitally sent copies)</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- AUTHENTICATION ---
+        // Basic security through obscurity client-side auth.
+        const authKey = btoa('admin:sakthi123'); // Simple base64 encode
+
+        function checkLogin() {
+            const uid = document.getElementById('userid').value;
+            const pwd = document.getElementById('password').value;
+            if (btoa(`${uid}:${pwd}`) === authKey) {
+                document.getElementById('login-overlay').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('login-overlay').style.display = 'none';
+                    initApp();
+                }, 500);
+            } else {
+                document.getElementById('login-error').style.display = 'block';
+            }
+        }
+
+        function logout() {
+            document.getElementById('userid').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('login-error').style.display = 'none';
+            document.getElementById('login-overlay').style.display = 'flex';
+            setTimeout(() => {
+                document.getElementById('login-overlay').style.opacity = '1';
+            }, 10);
+        }
+        
+        // Allow enter key to login
+        document.getElementById('password').addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') checkLogin();
+        });
+
+
+        // --- INVOICE LOGIC ---
+        
+        function initApp() {
+            // Set default date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('f-inv-date').value = today;
+            updatePreview();
+        }
+
+        function addItem() {
+            const template = `
+                <input type="text" class="desc" placeholder="Service Description" oninput="updatePreview()">
+                <button class="btn-remove-item" onclick="removeItem(this)"><i class="fas fa-trash"></i></button>
+                <input type="number" class="num qty" placeholder="Qty" value="1" min="1" oninput="updatePreview()">
+                <input type="number" class="num rate" placeholder="Rate" value="0" min="0" step="0.01" oninput="updatePreview()">
+                <input type="number" class="num tax" placeholder="Tax %" value="0" min="0" oninput="updatePreview()" title="Tax % (e.g. 18)">
+            `;
+            const div = document.createElement('div');
+            div.className = 'item-row';
+            div.innerHTML = template;
+            document.getElementById('items-container').appendChild(div);
+            updatePreview();
+        }
+
+        function removeItem(btn) {
+            btn.parentElement.remove();
+            updatePreview();
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            return new Date(dateStr).toLocaleDateString('en-IN', options);
+        }
+
+        function updatePreview() {
+            // Text fields
+            document.getElementById('p-inv-num').innerText = document.getElementById('f-inv-num').value || '-';
+            document.getElementById('p-inv-date').innerText = formatDate(document.getElementById('f-inv-date').value) || '-';
+            
+            const dueDate = document.getElementById('f-due-date').value;
+            if(dueDate) {
+                document.getElementById('p-due-date-row').style.display = 'flex';
+                document.getElementById('p-due-date').innerText = formatDate(dueDate);
+            } else {
+                document.getElementById('p-due-date-row').style.display = 'none';
+            }
+
+            document.getElementById('p-client-name').innerText = document.getElementById('f-client-name').value || 'Client Name';
+            
+            const addr = document.getElementById('f-client-addr').value;
+            document.getElementById('p-client-addr').innerHTML = addr ? addr.replace(/\n/g, '<br>') : '';
+            
+            const phone = document.getElementById('f-client-phone').value;
+            const email = document.getElementById('f-client-email').value;
+            const gstin = document.getElementById('f-client-gstin').value;
+            
+            document.getElementById('p-client-phone').innerText = phone ? `Phone: ${phone}` : '';
+            document.getElementById('p-client-email').innerText = email ? `${email}` : '';
+            document.getElementById('p-client-gstin').innerText = gstin ? `GSTIN: ${gstin}` : '';
+
+            document.getElementById('p-notes').innerText = document.getElementById('f-notes').value || '';
+
+            // Calculate items
+            const rows = document.querySelectorAll('.item-row');
+            const tbody = document.getElementById('p-items-body');
+            tbody.innerHTML = '';
+            
+            let subtotal = 0;
+            let totalTaxAmount = 0;
+            let hasAnyTax = false;
+
+            rows.forEach(row => {
+                const desc = row.querySelector('.desc').value || '-';
+                const qty = parseFloat(row.querySelector('.qty').value) || 0;
+                const rate = parseFloat(row.querySelector('.rate').value) || 0;
+                const taxPct = parseFloat(row.querySelector('.tax').value) || 0;
+                
+                const itemTotal = qty * rate;
+                const itemTax = itemTotal * (taxPct / 100);
+                
+                subtotal += itemTotal;
+                totalTaxAmount += itemTax;
+                
+                if (taxPct > 0) hasAnyTax = true;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${desc}</td>
+                    <td class="right">${qty}</td>
+                    <td class="right">${formatCurrency(rate)}</td>
+                    <td class="right tax-col" style="${taxPct>0 ? '' : 'display:none;'}">${taxPct}%</td>
+                    <td class="right">${formatCurrency(itemTotal)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Adjust table header and columns if no tax is present across all items
+            const thTax = document.getElementById('th-tax');
+            if(hasAnyTax) {
+                thTax.style.display = 'table-cell';
+                document.querySelectorAll('.tax-col').forEach(el => el.style.display = 'table-cell');
+                document.getElementById('p-tax-total-row').style.display = 'flex';
+            } else {
+                thTax.style.display = 'none';
+                document.getElementById('p-tax-total-row').style.display = 'none';
+            }
+
+            const grandTotal = subtotal + totalTaxAmount;
+
+            document.getElementById('p-subtotal').innerText = formatCurrency(subtotal);
+            document.getElementById('p-tax-total').innerText = formatCurrency(totalTaxAmount);
+            document.getElementById('p-total').innerText = formatCurrency(grandTotal);
+        }
+
+        // --- PDF GENERATION ---
+        function generatePDF() {
+            const element = document.getElementById('invoice-document');
+            const invNum = document.getElementById('f-inv-num').value || 'invoice';
+            const clientName = document.getElementById('f-client-name').value || 'client';
+            
+            const opt = {
+                margin:       0,
+                filename:     `Sakthi_Invoice_${invNum}_${clientName.replace(/\s+/g, '_')}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+
+            // Before saving, ensure UI tweaks if necessary
+            html2pdf().set(opt).from(element).save();
+        }
+
+    </script>
+</body>
+</html>
