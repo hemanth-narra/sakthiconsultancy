@@ -9,6 +9,18 @@ const app = express();
 const PORT = process.env.PORT || 80;
 const JWT_SECRET = process.env.JWT_SECRET || 'sakthi_hr_secret_key_change_in_prod';
 
+// Standard 8-hour shift slots
+const TIME_SLOTS = [
+    "10:00 AM - 11:00 AM",
+    "11:00 AM - 12:00 PM",
+    "12:00 PM - 01:00 PM",
+    "01:00 PM - 02:00 PM",
+    "02:00 PM - 03:00 PM",
+    "03:00 PM - 04:00 PM",
+    "04:00 PM - 05:00 PM",
+    "05:00 PM - 06:00 PM"
+];
+
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -28,34 +40,40 @@ const db = new sqlite3.Database('./database.sqlite', (err) => {
     } else {
         console.log('Connected to the SQLite database.');
         db.serialize(() => {
+            // Enhanced employees table
             db.run(`CREATE TABLE IF NOT EXISTS employees (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 email TEXT UNIQUE NOT NULL,
                 password_hash TEXT NOT NULL,
-                role TEXT NOT NULL DEFAULT 'employee'
+                role TEXT NOT NULL DEFAULT 'employee',
+                designation TEXT,
+                joining_date TEXT
             )`);
 
-            db.run(`CREATE TABLE IF NOT EXISTS work_status (
+            // Hourly schedule tracks assignments and statuses
+            db.run(`CREATE TABLE IF NOT EXISTS hourly_schedule (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 employee_id INTEGER,
                 date TEXT NOT NULL,
-                status TEXT NOT NULL,
-                notes TEXT,
+                hour_slot TEXT NOT NULL,
+                admin_task TEXT,
+                status TEXT DEFAULT 'Yet to start',
+                remarks TEXT,
+                UNIQUE(employee_id, date, hour_slot),
                 FOREIGN KEY (employee_id) REFERENCES employees (id)
             )`);
 
-            // Seed default users if the table is empty
+            // Seed default admin if the table is empty
             db.get(`SELECT COUNT(*) as count FROM employees`, async (err, row) => {
                 if (row.count === 0) {
-                    const adminHash = await bcrypt.hash('Admin@123', 10);
-                    const empHash = await bcrypt.hash('Employee@123', 10);
+                    const adminHash = await bcrypt.hash('Sakthi@123', 10);
+                    const todayDate = new Date().toISOString().split('T')[0];
 
-                    const stmt = db.prepare(`INSERT INTO employees (name, email, password_hash, role) VALUES (?, ?, ?, ?)`);
-                    stmt.run('Admin User', 'admin@sakthi.com', adminHash, 'admin');
-                    stmt.run('Test Employee', 'employee@sakthi.com', empHash, 'employee');
+                    const stmt = db.prepare(`INSERT INTO employees (name, email, password_hash, role, designation, joining_date) VALUES (?, ?, ?, ?, ?, ?)`);
+                    stmt.run('Administrator', 'admin@sakthiconsultancy.com', adminHash, 'admin', 'System Administrator', todayDate);
                     stmt.finalize();
-                    console.log('Seeded initial admin@sakthi.com and employee@sakthi.com');
+                    console.log('Seeded master admin@sakthiconsultancy.com');
                 }
             });
         });
@@ -83,20 +101,6 @@ const restrictToAdmin = (req, res, next) => {
 // API ROUTES
 // ========================
 
-// Auto-absent checking logic
-// Simply runs whenever a status or report is checked for the current date logic.
-const checkAndMarkAbsences = () => {
-    // A robust system would run this via node-cron daily.
-    // For simplicity, we just mark past missed days on fetch if necessary.
-    // But inserting "Absent" rows up to today can be tricky. Let's just do it directly.
-    const today = new Date().toISOString().split('T')[0];
-    
-    // Select all employees, then check if they have a record for yesterday (or loop through last 7 days).
-    // For this simple implementation, the reports query handles absent states via LEFT JOIN if we generate dates.
-    // However, SQLite doesn't have an easy generate_series. 
-    // We will do a simple approach: whenever an admin pulls report, we don't insert, we just query available data.
-}
-
 // Ensure the root path resolves correctly if requested directly
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
@@ -105,7 +109,7 @@ app.get('/index.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// AUTH API
+// 1. AUTH API
 app.post('/hr/api/auth/login', (req, res) => {
     const { email, password } = req.body;
     db.get(`SELECT * FROM employees WHERE email = ?`, [email], async (err, user) => {
@@ -114,16 +118,17 @@ app.post('/hr/api/auth/login', (req, res) => {
         const validPassword = await bcrypt.compare(password, user.password_hash);
         if (!validPassword) return res.status(401).json({ error: 'Invalid credentials' });
 
-        const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name }, JWT_SECRET, { expiresIn: '12h' });
-        
-        // Secure in prod, false for local dev via HTTP
+        const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '12h' });
         res.cookie('hr_token', token, { httpOnly: true, secure: false, maxAge: 12 * 60 * 60 * 1000 });
-        res.json({ message: 'Logged in successfully', user: { id: user.id, name: user.name, role: user.role, email: user.email } });
+        res.json({ message: 'Logged in successfully' });
     });
 });
 
 app.get('/hr/api/auth/me', authenticateToken, (req, res) => {
-    res.json({ user: req.user });
+    db.get(`SELECT id, name, email, role, designation, joining_date FROM employees WHERE id = ?`, [req.user.id], (err, row) => {
+        if (err || !row) return res.status(404).json({ error: 'User not found' });
+        res.json({ user: row });
+    });
 });
 
 app.post('/hr/api/auth/logout', (req, res) => {
@@ -131,61 +136,124 @@ app.post('/hr/api/auth/logout', (req, res) => {
     res.json({ message: 'Logged out' });
 });
 
-// STATUS API
-app.post('/hr/api/status', authenticateToken, (req, res) => {
-    const { status, notes } = req.body;
-    const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    const employee_id = req.user.id;
+// 2. EMPLOYEES LIST (For Admin to select and assign)
+app.get('/hr/api/employees', authenticateToken, restrictToAdmin, (req, res) => {
+    db.all(`SELECT id, name, designation FROM employees WHERE role = 'employee'`, [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ employees: rows });
+    });
+});
 
-    // Check if submitting for today already exists
-    db.get(`SELECT id FROM work_status WHERE employee_id = ? AND date = ?`, [employee_id, date], (err, row) => {
+// 2b. CREATE EMPLOYEE (Admin Only)
+app.post('/hr/api/employees', authenticateToken, restrictToAdmin, async (req, res) => {
+    const { name, email, password, designation, joining_date } = req.body;
+    try {
+        const hash = await bcrypt.hash(password, 10);
+        db.run(`INSERT INTO employees (name, email, password_hash, role, designation, joining_date) VALUES (?, ?, ?, 'employee', ?, ?)`,
+        [name, email, hash, designation, joining_date], function(err) {
+            if (err) {
+                if (err.message.includes('UNIQUE constraint failed')) {
+                    return res.status(400).json({ error: 'Email already exists' });
+                }
+                return res.status(500).json({ error: err.message });
+            }
+            res.json({ message: 'Employee created successfully', id: this.lastID });
+        });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to hash password' });
+    }
+});
+
+// 3. SCHEDULE FETCH
+app.get('/hr/api/schedule', authenticateToken, (req, res) => {
+    // Admin can specify employee_id. Employees can only get their own.
+    const employee_id = req.user.role === 'admin' && req.query.employee_id ? req.query.employee_id : req.user.id;
+    const date = req.query.date || new Date().toISOString().split('T')[0];
+
+    db.all(`SELECT hour_slot, admin_task, status, remarks FROM hourly_schedule WHERE employee_id = ? AND date = ? ORDER BY id ASC`, 
+    [employee_id, date], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         
-        if (row) {
-            // Update
-            db.run(`UPDATE work_status SET status = ?, notes = ? WHERE id = ?`, [status, notes, row.id], function(err) {
-                if (err) return res.status(500).json({ error: err.message });
-                res.json({ message: 'Status updated successfully' });
-            });
-        } else {
-            // Insert
-            db.run(`INSERT INTO work_status (employee_id, date, status, notes) VALUES (?, ?, ?, ?)`, [employee_id, date, status, notes], function(err) {
-                if (err) return res.status(500).json({ error: err.message });
-                res.json({ message: 'Status submitted successfully' });
-            });
+        // If no schedule exists, return a blank template
+        if (rows.length === 0) {
+            const blankSchedule = TIME_SLOTS.map(slot => ({
+                hour_slot: slot, admin_task: '', status: 'Yet to start', remarks: ''
+            }));
+            return res.json({ date, schedule: blankSchedule });
         }
+        res.json({ date, schedule: rows });
     });
 });
 
-app.get('/hr/api/status/today', authenticateToken, (req, res) => {
-    const date = new Date().toISOString().split('T')[0];
-    db.get(`SELECT * FROM work_status WHERE employee_id = ? AND date = ?`, [req.user.id, date], (err, row) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ status: row || null });
+// 4. ADMIN ASSIGN TASKS
+app.post('/hr/api/schedule/admin', authenticateToken, restrictToAdmin, (req, res) => {
+    const { employee_id, date, tasks } = req.body; // tasks is an array [{hour_slot, admin_task}]
+    
+    db.serialize(() => {
+        db.run("BEGIN TRANSACTION");
+        tasks.forEach(task => {
+            // Upsert mechanism: If row exists, update admin_task. Else insert.
+            db.run(`INSERT INTO hourly_schedule (employee_id, date, hour_slot, admin_task) 
+                    VALUES (?, ?, ?, ?)
+                    ON CONFLICT(employee_id, date, hour_slot) DO UPDATE SET admin_task = excluded.admin_task`,
+            [employee_id, date, task.hour_slot, task.admin_task]);
+        });
+        db.run("COMMIT", (err) => {
+            if (err) return res.status(500).json({ error: 'Transaction failed' });
+            res.json({ message: 'Tasks assigned successfully' });
+        });
     });
 });
 
-// REPORTS API (Admin)
-// Get all statuses or a specific date/date range
+// 5. EMPLOYEE UPDATE STATUS & REMARKS
+app.post('/hr/api/schedule/employee', authenticateToken, (req, res) => {
+    const { date, updates } = req.body; // updates is array [{hour_slot, status, remarks}]
+    const employee_id = req.user.id; // Enforce security
+
+    db.serialize(() => {
+        db.run("BEGIN TRANSACTION");
+        updates.forEach(update => {
+            // Upsert mechanism. Note: If admin hasn't created the row, employee can still create it to log their work
+            db.run(`INSERT INTO hourly_schedule (employee_id, date, hour_slot, status, remarks) 
+                    VALUES (?, ?, ?, ?, ?)
+                    ON CONFLICT(employee_id, date, hour_slot) DO UPDATE SET status = excluded.status, remarks = excluded.remarks`,
+            [employee_id, date, update.hour_slot, update.status, update.remarks]);
+        });
+        db.run("COMMIT", (err) => {
+            if (err) return res.status(500).json({ error: 'Transaction failed' });
+            res.json({ message: 'Status updated successfully' });
+        });
+    });
+});
+
+// 6. OVERARCHING REPORTS (Admin)
 app.get('/hr/api/reports', authenticateToken, restrictToAdmin, (req, res) => {
     const date = req.query.date || new Date().toISOString().split('T')[0];
     
-    // We want to return a list of all employees and their status for the given date.
-    // If no work_status row exists, status is "No Status/Absent"
+    // Summary of employee daily progress (e.g., checking if they have filled any hours)
     const query = `
         SELECT 
             e.id as employee_id, 
-            e.name as employee_name, 
-            COALESCE(w.status, 'Absent') as status,
-            w.notes
+            e.name as employee_name,
+            COUNT(h.id) as hours_logged,
+            SUM(CASE WHEN h.status = 'Completed' THEN 1 ELSE 0 END) as tasks_completed
         FROM employees e
-        LEFT JOIN work_status w ON e.id = w.employee_id AND w.date = ?
+        LEFT JOIN hourly_schedule h ON e.id = h.employee_id AND h.date = ? 
         WHERE e.role = 'employee'
+        GROUP BY e.id
     `;
 
     db.all(query, [date], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
-        res.json({ date, reports: rows });
+        
+        // Format the report response
+        const reports = rows.map(r => ({
+            employee_id: r.employee_id,
+            employee_name: r.employee_name,
+            hours_logged: r.hours_logged,
+            status: r.hours_logged === 0 ? 'Absent/No Logs' : `${r.tasks_completed} Tasks Completed`
+        }));
+        res.json({ date, reports });
     });
 });
 

@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // State
     let currentUser = null;
+    let timeSlotsMaster = [];
 
     // Elements
     const views = document.querySelectorAll('.view');
@@ -14,16 +15,38 @@ document.addEventListener('DOMContentLoaded', () => {
     // Setup Date Displays
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     document.getElementById('current-date').textContent = 'Today: ' + new Date().toLocaleDateString('en-US', options);
-    document.getElementById('report-date').value = new Date().toISOString().split('T')[0];
+    const todayISO = new Date().toISOString().split('T')[0];
+    document.getElementById('report-date').value = todayISO;
+    document.getElementById('assign-date').value = todayISO;
 
-    // Listeners
+    // Listeners (Auth)
     document.getElementById('login-form').addEventListener('submit', handleLogin);
     document.getElementById('logout-btn').addEventListener('click', handleLogout);
-    document.getElementById('status-form').addEventListener('submit', handleStatusSubmit);
-    document.getElementById('report-date').addEventListener('change', fetchAdminReports);
-    document.getElementById('export-btn').addEventListener('click', exportToCSV);
 
-    // Functions
+    // Listeners (Employee)
+    document.getElementById('submit-schedule-btn')?.addEventListener('click', saveEmployeeSchedule);
+
+    // Listeners (Admin)
+    document.getElementById('report-date')?.addEventListener('change', fetchAdminReports);
+    document.getElementById('load-assign-btn')?.addEventListener('click', loadAdminAssignmentGrid);
+    document.getElementById('save-assignments-btn')?.addEventListener('click', saveAdminAssignments);
+    document.getElementById('create-employee-form')?.addEventListener('submit', handleCreateEmployee);
+
+    // Document-level Listeners (Tabs & Modals)
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active-tab'));
+            e.target.classList.add('active');
+            document.getElementById(e.target.dataset.target).classList.add('active-tab');
+        });
+    });
+
+    document.querySelector('.close-modal')?.addEventListener('click', () => {
+        document.getElementById('breakdown-modal').style.display = 'none';
+    });
+
+    // --- Core Functions ---
     function showView(viewId) {
         views.forEach(v => v.classList.remove('section-active'));
         document.getElementById(viewId).classList.add('section-active');
@@ -40,9 +63,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (currentUser.role === 'admin') {
                     showView('admin-view');
                     fetchAdminReports();
+                    loadEmployeesDropdown();
                 } else {
                     showView('employee-view');
-                    fetchTodayStatus();
+                    renderEmployeeProfile();
+                    loadEmployeeSchedule();
                 }
             } else {
                 showView('login-view');
@@ -58,6 +83,12 @@ document.addEventListener('DOMContentLoaded', () => {
         userControls.style.display = 'flex';
         headerUserName.textContent = currentUser.name;
         headerUserRole.textContent = currentUser.role;
+    }
+
+    function renderEmployeeProfile() {
+        document.getElementById('profile-name').textContent = currentUser.name;
+        document.getElementById('profile-designation').textContent = currentUser.designation || 'Employee';
+        document.getElementById('profile-joined').textContent = currentUser.joining_date || 'N/A';
     }
 
     async function handleLogin(e) {
@@ -93,120 +124,287 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Reset forms
         document.getElementById('login-form').reset();
-        document.getElementById('status-form').reset();
         document.getElementById('status-submitted-alert').style.display = 'none';
         
         showView('login-view');
     }
 
-    async function handleStatusSubmit(e) {
-        e.preventDefault();
-        const status = document.getElementById('work-status').value;
-        const notes = document.getElementById('work-notes').value;
-        
-        const btn = document.getElementById('submit-status-btn');
+    // --- Employee Logic ---
+
+    async function loadEmployeeSchedule() {
+        const date = new Date().toISOString().split('T')[0];
+        try {
+            const res = await fetch(`/hr/api/schedule?date=${date}`);
+            const data = await res.json();
+            
+            const tbody = document.getElementById('employee-schedule-tbody');
+            tbody.innerHTML = '';
+            
+            timeSlotsMaster = data.schedule.map(s => s.hour_slot); // Keep reference to slots
+
+            data.schedule.forEach((slot, index) => {
+                const tr = document.createElement('tr');
+                
+                tr.innerHTML = `
+                    <td>
+                        <span class="time-slot-label"><i class="fa-regular fa-clock" style="margin-right: 6px;"></i> ${slot.hour_slot}</span>
+                        <input type="hidden" name="slot" value="${slot.hour_slot}">
+                    </td>
+                    <td>
+                        <div class="admin-task-cell">${slot.admin_task || '<i>No specific task assigned</i>'}</div>
+                    </td>
+                    <td>
+                        <select class="form-control status-select">
+                            <option value="Yet to start" ${slot.status === 'Yet to start' ? 'selected' : ''}>Yet to start</option>
+                            <option value="Work-in-progress" ${slot.status === 'Work-in-progress' ? 'selected' : ''}>Work-in-progress</option>
+                            <option value="Completed" ${slot.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                        </select>
+                    </td>
+                    <td>
+                        <textarea class="form-control remarks-input" rows="2" placeholder="Write progress or 'Lunch'">${slot.remarks || ''}</textarea>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } catch (err) {
+            console.error('Failed to load schedule', err);
+        }
+    }
+
+    async function saveEmployeeSchedule() {
+        const btn = document.getElementById('submit-schedule-btn');
         btn.disabled = true;
-        btn.innerHTML = 'Submitting...';
+        btn.innerHTML = 'Saving...';
+        
+        const date = new Date().toISOString().split('T')[0];
+        const tbody = document.getElementById('employee-schedule-tbody');
+        const rows = tbody.querySelectorAll('tr');
+        
+        const updates = Array.from(rows).map(row => {
+            return {
+                hour_slot: row.querySelector('input[name="slot"]').value,
+                status: row.querySelector('.status-select').value,
+                remarks: row.querySelector('.remarks-input').value
+            };
+        });
 
         try {
-            const res = await fetch('/hr/api/status', {
+            const res = await fetch('/hr/api/schedule/employee', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status, notes })
+                body: JSON.stringify({ date, updates })
             });
 
             if (res.ok) {
                 document.getElementById('status-submitted-alert').style.display = 'flex';
+                setTimeout(() => { document.getElementById('status-submitted-alert').style.display = 'none'; }, 3000);
             }
         } catch (err) {
-            console.error(err);
-            alert('Failed to submit status.');
+            alert('Failed to save updates');
         } finally {
             btn.disabled = false;
-            btn.innerHTML = 'Update Status <i class="fa-solid fa-paper-plane"></i>';
+            btn.innerHTML = 'Save Day\'s Work <i class="fa-solid fa-paper-plane"></i>';
         }
     }
 
-    async function fetchTodayStatus() {
+    // --- Admin Logic ---
+
+    async function loadEmployeesDropdown() {
         try {
-            const res = await fetch('/hr/api/status/today');
+            const res = await fetch('/hr/api/employees');
+            const data = await res.json();
+            const select = document.getElementById('assign-employee-select');
+            select.innerHTML = '';
+            data.employees.forEach(e => {
+                const opt = document.createElement('option');
+                opt.value = e.id;
+                opt.textContent = `${e.name} (${e.designation || 'Employee'})`;
+                select.appendChild(opt);
+            });
+        } catch (e) {
+            console.error("Failed loading employees list");
+        }
+    }
+
+    async function loadAdminAssignmentGrid() {
+        const employee_id = document.getElementById('assign-employee-select').value;
+        const date = document.getElementById('assign-date').value;
+        
+        if (!employee_id || !date) return;
+
+        try {
+            const res = await fetch(`/hr/api/schedule?employee_id=${employee_id}&date=${date}`);
+            const data = await res.json();
+            
+            const tbody = document.getElementById('admin-schedule-tbody');
+            tbody.innerHTML = '';
+            
+            data.schedule.forEach(slot => {
+                const statusBadgeMap = {
+                    'Yet to start': 'status-absent',
+                    'Work-in-progress': 'status-wip',
+                    'Completed': 'status-completed'
+                };
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <span class="time-slot-label">${slot.hour_slot}</span>
+                        <input type="hidden" name="admin-slot" value="${slot.hour_slot}">
+                    </td>
+                    <td>
+                        <textarea class="form-control admin-task-input" rows="2" placeholder="Assign task or leave blank">${slot.admin_task || ''}</textarea>
+                    </td>
+                    <td>
+                        <span class="status-badge ${statusBadgeMap[slot.status] || ''}">${slot.status}</span>
+                        <p style="font-size: 0.85rem; color: #666; margin-top: 0.4rem;"><b>Remarks:</b> ${slot.remarks || '<i>None</i>'}</p>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+            document.getElementById('assignment-grid-container').style.display = 'block';
+            document.getElementById('assign-success').style.display = 'none';
+
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    async function saveAdminAssignments() {
+        const employee_id = document.getElementById('assign-employee-select').value;
+        const date = document.getElementById('assign-date').value;
+        
+        const rows = document.querySelectorAll('#admin-schedule-tbody tr');
+        const tasks = Array.from(rows).map(row => ({
+            hour_slot: row.querySelector('input[name="admin-slot"]').value,
+            admin_task: row.querySelector('.admin-task-input').value
+        }));
+
+        try {
+            const res = await fetch('/hr/api/schedule/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ employee_id, date, tasks })
+            });
+
             if (res.ok) {
-                const data = await res.json();
-                if (data.status) {
-                    document.getElementById('work-status').value = data.status.status;
-                    document.getElementById('work-notes').value = data.status.notes || '';
-                    document.getElementById('status-submitted-alert').style.display = 'flex';
-                    document.getElementById('submit-status-btn').innerHTML = 'Update Status <i class="fa-solid fa-paper-plane"></i>';
-                }
+                document.getElementById('assign-success').style.display = 'block';
+                setTimeout(() => { document.getElementById('assign-success').style.display = 'none'; }, 3000);
             }
         } catch (err) {
-            console.error('Error fetching status', err);
+            alert("Failed to assign tasks.");
+        }
+    }
+
+    async function handleCreateEmployee(e) {
+        e.preventDefault();
+        const btn = document.getElementById('create-emp-btn');
+        const errorDiv = document.getElementById('create-emp-error');
+        const successDiv = document.getElementById('create-emp-success');
+        
+        btn.disabled = true;
+        btn.innerHTML = 'Creating...';
+        errorDiv.textContent = '';
+        successDiv.style.display = 'none';
+
+        const payload = {
+            name: document.getElementById('new-emp-name').value,
+            email: document.getElementById('new-emp-email').value,
+            password: document.getElementById('new-emp-pass').value,
+            designation: document.getElementById('new-emp-desig').value,
+            joining_date: document.getElementById('new-emp-date').value
+        };
+
+        try {
+            const res = await fetch('/hr/api/employees', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                successDiv.style.display = 'block';
+                document.getElementById('create-employee-form').reset();
+                loadEmployeesDropdown();
+                setTimeout(() => { successDiv.style.display = 'none'; }, 4000);
+            } else {
+                errorDiv.textContent = data.error || 'Failed to create employee';
+            }
+        } catch (err) {
+            errorDiv.textContent = 'Server error.';
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = 'Create Employee Profile';
         }
     }
 
     async function fetchAdminReports() {
         const date = document.getElementById('report-date').value;
         const tbody = document.getElementById('reports-tbody');
-        tbody.innerHTML = '<tr><td colspan="3" class="text-center">Loading...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center">Loading...</td></tr>';
 
         try {
             const res = await fetch(`/hr/api/reports?date=${date}`);
-            if (res.ok) {
-                const data = await res.json();
-                renderTable(data.reports);
+            const data = await res.json();
+            
+            tbody.innerHTML = '';
+            if (data.reports.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center">No employee records found.</td></tr>';
+                return;
             }
+
+            data.reports.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${r.employee_name}</strong></td>
+                    <td>${r.hours_logged}/8 hours modified</td>
+                    <td><span class="status-badge ${r.status.includes('Absent') ? 'status-absent' : 'status-present'}">${r.status}</span></td>
+                    <td>
+                        <button class="btn btn-outline view-details-btn" data-empid="${r.employee_id}" data-empname="${r.employee_name}" data-date="${date}">
+                            View Breakdown
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Bind Breakdown buttons
+            document.querySelectorAll('.view-details-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => loadBreakdownModal(e.target.dataset.empid, e.target.dataset.empname, e.target.dataset.date));
+            });
+
         } catch (err) {
             console.error(err);
-            tbody.innerHTML = '<tr><td colspan="3" class="text-center text-danger">Failed to load reports</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Failed to load reports</td></tr>';
         }
     }
 
-    function renderTable(reports) {
-        const tbody = document.getElementById('reports-tbody');
-        tbody.innerHTML = '';
+    async function loadBreakdownModal(employee_id, employee_name, date) {
+        document.getElementById('modal-title').textContent = `Breakdown: ${employee_name} (${date})`;
+        document.getElementById('breakdown-modal').style.display = 'flex';
+        
+        const tbody = document.getElementById('modal-tbody');
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center">Loading...</td></tr>';
 
-        if (reports.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3" class="text-center">No employee records found.</td></tr>';
-            return;
-        }
-
-        reports.forEach(r => {
-            const tr = document.createElement('tr');
+        try {
+            const res = await fetch(`/hr/api/schedule?employee_id=${employee_id}&date=${date}`);
+            const data = await res.json();
             
-            let statusClass = 'status-present';
-            if (r.status === 'Absent') statusClass = 'status-absent';
-            else if (r.status.includes('Leave')) statusClass = 'status-leave';
-
-            tr.innerHTML = `
-                <td><strong>${r.employee_name}</strong></td>
-                <td><span class="status-badge ${statusClass}">${r.status}</span></td>
-                <td>${r.notes || '-'}</td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
-
-    function exportToCSV() {
-        const date = document.getElementById('report-date').value;
-        const rows = document.querySelectorAll('#reports-tbody tr');
-        let csvContent = "data:text/csv;charset=utf-8,Employee,Status,Notes\n";
-
-        rows.forEach(row => {
-            const cols = row.querySelectorAll('td');
-            if (cols.length === 3) {
-                const name = cols[0].innerText.replace(/"/g, '""');
-                const status = cols[1].innerText.replace(/"/g, '""');
-                const notes = cols[2].innerText.replace(/"/g, '""');
-                csvContent += `"${name}","${status}","${notes}"\n`;
-            }
-        });
-
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `attendance_report_${date}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+            tbody.innerHTML = '';
+            data.schedule.forEach(slot => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="time-slot-label">${slot.hour_slot}</td>
+                    <td><div class="admin-task-cell">${slot.admin_task || '-'}</div></td>
+                    <td><span class="status-badge">${slot.status}</span></td>
+                    <td>${slot.remarks || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } catch (err) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Failed to load schedule</td></tr>';
+        }
     }
 });

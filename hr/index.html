@@ -69,59 +69,88 @@
         </section>
 
         <!-- 2. EMPLOYEE VIEW -->
-        <section id="employee-view" class="view">
-            <div class="glass-card dashboard-card">
-                <div class="dashboard-header">
-                    <h2>Daily Work Status</h2>
-                    <p class="current-date" id="current-date">Today: ...</p>
+        <section id="employee-view" class="view flex-column">
+            
+            <!-- Employee Profile Header -->
+            <div class="glass-card profile-card mb-4">
+                <div class="profile-header">
+                    <div class="profile-avatar">
+                        <i class="fa-solid fa-user-tie"></i>
+                    </div>
+                    <div class="profile-details">
+                        <h2 id="profile-name">Loading...</h2>
+                        <p class="designation" id="profile-designation">Loading...</p>
+                        <div class="meta-info">
+                            <span><i class="fa-regular fa-calendar-alt"></i> Joined: <span id="profile-joined">-</span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Employee Hourly Status Dashboard -->
+            <div class="glass-card dashboard-card large-card">
+                <div class="dashboard-header flex-between">
+                    <div>
+                        <h2>Hourly Work Schedule</h2>
+                        <p>Fill out your daily tasks and updates</p>
+                    </div>
+                    <div class="current-date" id="current-date">Today: ...</div>
                 </div>
                 
                 <div id="status-submitted-alert" class="alert alert-success" style="display: none;">
                     <i class="fa-solid fa-circle-check"></i>
                     <div>
-                        <strong>Status Submitted!</strong>
-                        <p>Your work status for today has been recorded.</p>
+                        <strong>Schedule Updated!</strong>
+                        <p>Your work progress for today has been recorded securely.</p>
                     </div>
                 </div>
 
-                <form id="status-form">
-                    <div class="form-group">
-                        <label for="work-status">Current Status</label>
-                        <select id="work-status" required class="form-control">
-                            <option value="">Select your status...</option>
-                            <option value="Working Online">Working Online</option>
-                            <option value="Working On-site">Working On-site</option>
-                            <option value="On Leave">On Leave</option>
-                            <option value="Half Day">Half Day</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="work-notes">Work Notes / Tasks Completed</label>
-                        <textarea id="work-notes" rows="4" class="form-control" placeholder="Briefly describe what you worked on today..."></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary" id="submit-status-btn">
-                        Submit Status <i class="fa-solid fa-paper-plane"></i>
+                <div class="table-responsive">
+                    <table class="data-table form-table">
+                        <thead>
+                            <tr>
+                                <th width="15%">Time Slot</th>
+                                <th width="25%">Task Assigned (By Admin)</th>
+                                <th width="20%">Status</th>
+                                <th width="40%">Remarks / Progress / Lunch info</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employee-schedule-tbody">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="form-actions mt-4">
+                    <button class="btn btn-primary" id="submit-schedule-btn">
+                        Save Day's Work <i class="fa-solid fa-paper-plane"></i>
                     </button>
-                </form>
+                </div>
             </div>
         </section>
 
         <!-- 3. ADMIN VIEW -->
-        <section id="admin-view" class="view">
-            <div class="glass-card admin-card">
+        <section id="admin-view" class="view flex-column">
+            
+            <!-- Admin Tabs -->
+            <div class="admin-tabs mb-4">
+                <button class="btn tab-btn active" data-target="admin-reports-tab">View Daily Reports</button>
+                <button class="btn tab-btn" data-target="admin-assign-tab">Assign Tasks</button>
+                <button class="btn tab-btn" data-target="admin-employee-tab">Create Employee</button>
+            </div>
+
+            <!-- Sub View: Reports -->
+            <div id="admin-reports-tab" class="glass-card admin-card tab-content active-tab">
                 <div class="dashboard-header admin-header">
                     <div>
-                        <h2>Admin Dashboard</h2>
-                        <p>Employee Daily Attendance & Status Records</p>
+                        <h2>Employee Efficiency Reports</h2>
+                        <p>Track team progress and hourly breakdowns</p>
                     </div>
                     <div class="admin-actions">
                         <div class="date-picker-wrapper">
-                            <label for="report-date">Date:</label>
+                            <label for="report-date">Select Date:</label>
                             <input type="date" id="report-date" class="form-control">
                         </div>
-                        <button class="btn btn-primary" id="export-btn">
-                            <i class="fa-solid fa-download"></i> Export CSV
-                        </button>
                     </div>
                 </div>
 
@@ -130,8 +159,9 @@
                         <thead>
                             <tr>
                                 <th>Employee</th>
-                                <th>Status</th>
-                                <th>Notes</th>
+                                <th>Work Hours Logged</th>
+                                <th>Overall Evaluation</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="reports-tbody">
@@ -140,8 +170,116 @@
                     </table>
                 </div>
             </div>
+
+            <!-- Sub View: Assign Tasks -->
+            <div id="admin-assign-tab" class="glass-card admin-card tab-content" style="display: none;">
+                <div class="dashboard-header admin-header">
+                    <div>
+                        <h2>Assign Employee Tasks</h2>
+                        <p>Delegate hourly work to your team</p>
+                    </div>
+                    <div class="admin-actions">
+                        <div class="form-group mb-0">
+                            <select id="assign-employee-select" class="form-control">
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+                        <div class="date-picker-wrapper">
+                            <label for="assign-date">Date:</label>
+                            <input type="date" id="assign-date" class="form-control">
+                        </div>
+                        <button class="btn btn-primary" id="load-assign-btn">Load Schedule</button>
+                    </div>
+                </div>
+
+                <!-- Assignment Grid -->
+                <div id="assignment-grid-container" style="display: none;">
+                    <div class="table-responsive">
+                        <table class="data-table form-table">
+                            <thead>
+                                <tr>
+                                    <th width="20%">Time Slot</th>
+                                    <th width="40%">Task Description (Your assignment)</th>
+                                    <th width="40%">Current Employee Progress</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-schedule-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="form-actions mt-4 text-right">
+                        <button class="btn btn-primary" id="save-assignments-btn">
+                            Deploy Tasks <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                        <div id="assign-success" class="mt-2 text-success" style="display:none; font-weight:600;">Tasks Successfully Assigned!</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sub View: Create Employee -->
+            <div id="admin-employee-tab" class="glass-card admin-card tab-content" style="display: none;">
+                <div class="dashboard-header admin-header">
+                    <div>
+                        <h2>Onboard New Employee</h2>
+                        <p>Create credentials and profiles for your staff</p>
+                    </div>
+                </div>
+
+                <div style="max-width: 600px;">
+                    <form id="create-employee-form">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" id="new-emp-name" class="form-control" required placeholder="John Doe">
+                        </div>
+                        <div class="form-group">
+                            <label>Email Address</label>
+                            <input type="email" id="new-emp-email" class="form-control" required placeholder="john@sakthiconsultancy.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Temporary Password</label>
+                            <input type="text" id="new-emp-pass" class="form-control" required placeholder="Employee@123">
+                        </div>
+                        <div class="form-group">
+                            <label>Designation</label>
+                            <input type="text" id="new-emp-desig" class="form-control" required placeholder="Junior Consultant">
+                        </div>
+                        <div class="form-group">
+                            <label>Joining Date</label>
+                            <input type="date" id="new-emp-date" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="create-emp-btn">Create Employee Profile</button>
+                        <div id="create-emp-success" class="mt-2 text-success" style="display:none; font-weight:600;">Employee created successfully!</div>
+                        <div id="create-emp-error" class="error-message mt-2" style="text-align:left;"></div>
+                    </form>
+                </div>
+            </div>
         </section>
     </main>
+
+    <!-- Modal for Breakdown -->
+    <div id="breakdown-modal" class="modal-overlay">
+        <div class="modal-content glass-card">
+            <div class="modal-header">
+                <h3 id="modal-title"> Hourly Breakdown</h3>
+                <span class="close-modal"><i class="fa-solid fa-times"></i></span>
+            </div>
+            <div class="modal-body table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Time Slot</th>
+                            <th>Admin Task</th>
+                            <th>Status</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modal-tbody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
     <div class="bg-abstract shape-1"></div>
     <div class="bg-abstract shape-2"></div>
