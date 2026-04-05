@@ -11,6 +11,7 @@ COPY index.html /usr/share/nginx/html/
 COPY styles.css /usr/share/nginx/html/
 COPY script.js /usr/share/nginx/html/
 COPY links/ /usr/share/nginx/html/links/
+COPY invoice/ /usr/share/nginx/html/invoice/
 
 # Expose port 80 to the outside world
 EXPOSE 80
