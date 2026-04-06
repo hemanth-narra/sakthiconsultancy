@@ -500,8 +500,47 @@ textarea.form-control { resize: vertical; min-height: 40px; }
 .close-modal:hover { color: #ef4444; }
 
 @media (max-width: 768px) {
-    .admin-header { flex-direction: column; align-items: flex-start; }
+    /* Main Layout */
     .header { padding: 1rem; }
+    .main-content { padding: 1.5rem 0.5rem; }
+    
+    /* Hide some header bits */
     #header-user-name { display: none; }
-    .form-table th, .form-table td { padding: 0.5rem; font-size: 0.8rem; }
+    .logo-text { font-size: 1.2rem; }
+    .user-controls { gap: 0.8rem; }
+    .btn { padding: 0.5rem 1rem; font-size: 0.8rem; }
+
+    /* Glass Cards scaling */
+    .glass-card { padding: 1.25rem 1rem; }
+    
+    /* Admin Dashboard specific */
+    .admin-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+    .admin-actions { width: 100%; flex-direction: column; align-items: flex-start; }
+    .admin-actions .form-group, .admin-actions .date-picker-wrapper, .admin-actions .btn { width: 100%; }
+    .admin-actions select, .admin-actions input { width: 100%; }
+    
+    /* Make Admin Tabs scrollable horizontally */
+    .admin-tabs { 
+        flex-wrap: nowrap; 
+        overflow-x: auto; 
+        -webkit-overflow-scrolling: touch; 
+        justify-content: flex-start;
+        padding-bottom: 0.5rem;
+    }
+    .tab-btn { flex: 0 0 auto; white-space: nowrap; }
+
+    /* Profile Card specific */
+    .profile-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+    .meta-info { flex-direction: column; gap: 0.5rem; }
+
+    /* Table adjustments */
+    .table-responsive { 
+        padding-bottom: 0.5rem; 
+    }
+    .data-table { min-width: 700px; }
+    .form-table th, .form-table td { padding: 0.5rem; font-size: 0.85rem; }
+    
+    /* Typography */
+    h2 { font-size: 1.5rem; }
+    .card-header p { font-size: 0.9rem; }
 }
