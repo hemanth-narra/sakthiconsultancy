@@ -66,6 +66,10 @@ const db = new sqlite3.Database('./database.sqlite', (err) => {
                 FOREIGN KEY (employee_id) REFERENCES employees (id)
             )`);
 
+            // Apply migrations for backward compatibility if replacing an older version
+            db.run(`ALTER TABLE employees ADD COLUMN mobile TEXT`, (err) => {});
+            db.run(`ALTER TABLE hourly_schedule ADD COLUMN invoiced BOOLEAN DEFAULT 0`, (err) => {});
+
             // Seed default admin if the table is empty
             db.get(`SELECT COUNT(*) as count FROM employees`, async (err, row) => {
                 if (row.count === 0) {
