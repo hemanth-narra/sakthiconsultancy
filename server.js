@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 80;
@@ -34,7 +35,13 @@ app.get('/styles.css', (req, res) => res.sendFile(path.join(__dirname, 'styles.c
 app.get('/script.js', (req, res) => res.sendFile(path.join(__dirname, 'script.js')));
 
 // Initialize SQLite Database
-const db = new sqlite3.Database('./database.sqlite', (err) => {
+const dataDir = path.join(__dirname, 'data');
+if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir);
+}
+
+const dbPath = path.join(dataDir, 'database.sqlite');
+const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
         console.error('Error opening database', err.message);
     } else {
