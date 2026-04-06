@@ -99,8 +99,17 @@ const authenticateToken = (req, res, next) => {
 };
 
 const restrictToAdmin = (req, res, next) => {
-    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
-    next();
+    if (req.user.role) {
+        if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
+        return next();
+    }
+    
+    // Fallback: If token doesn't have role baked in, verify via Database
+    db.get(`SELECT role FROM employees WHERE id = ?`, [req.user.id], (err, row) => {
+        if (err || !row || row.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
+        req.user.role = row.role; // Attach for downstream
+        next();
+    });
 };
 
 // ========================
@@ -124,7 +133,7 @@ app.post('/hr/api/auth/login', (req, res) => {
         const validPassword = await bcrypt.compare(password, user.password_hash);
         if (!validPassword) return res.status(401).json({ error: 'Invalid credentials' });
 
-        const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '12h' });
+        const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '12h' });
         res.cookie('hr_token', token, { httpOnly: true, secure: false, maxAge: 12 * 60 * 60 * 1000 });
         res.json({ message: 'Logged in successfully' });
     });
