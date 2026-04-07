@@ -1,0 +1,7 @@
+<svg width="180" height="64" viewBox="0 0 180 64" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(16, 12)">
+      <rect x="0" y="16" width="20" height="24" rx="2" fill="#061B3B" transform="skewX(-15)" />
+      <rect x="14" y="0" width="14" height="14" rx="2" fill="#C5F805" transform="skewX(-15)" />
+  </g>
+  <text x="56" y="42" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="28" fill="#061B3B" letter-spacing="1.5">SAKTHI</text>
+</svg>
