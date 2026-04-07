@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sakthi Consultancy | CCFS 2026</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/styles.css">
+    <style>
+        .ccfs-alert {
+            background: rgba(220, 53, 69, 0.1);
+            border-left: 4px solid #dc3545;
+            padding: 20px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .ccfs-alert h4 {
+            color: #dc3545;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .ccfs-alert ul {
+            margin: 0;
+            padding-left: 20px;
+            color: #ccc; /* assuming dark mode default text, else #333 */
+        }
+        .bg-light .ccfs-alert ul {
+            color: #555;
+        }
+        .scheme-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 5px 15px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header / Navigation -->
+    <header class="header">
+        <div class="container nav-container">
+            <a href="/" style="text-decoration: none;">
+                <div class="logo">
+                    <div class="logo-mark">
+                        <span class="mark-blue"></span>
+                        <span class="mark-green"></span>
+                    </div>
+                    <div class="logo-text">SAKTHI</div>
+                </div>
+            </a>
+            <nav class="desktop-nav">
+                <ul>
+                    <li><a href="#about">About Scheme</a></li>
+                    <li><a href="#benefits">Key Benefits</a></li>
+                    <li><a href="#forms">Forms Covered</a></li>
+                    <li><a href="#exceptions">Exceptions</a></li>
+                    <li><a href="/#contact" class="btn btn-outline">Contact Us</a></li>
+                </ul>
+            </nav>
+            <div class="mobile-menu-btn">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mobile Navigation Overlay -->
+    <div class="mobile-nav-overlay">
+        <ul>
+            <li><a href="#about">About Scheme</a></li>
+            <li><a href="#benefits">Key Benefits</a></li>
+            <li><a href="#forms">Forms Covered</a></li>
+            <li><a href="#exceptions">Exceptions</a></li>
+            <li><a href="/#contact">Contact Us</a></li>
+        </ul>
+        <div class="close-menu"><i class="fas fa-times"></i></div>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home" style="min-height: 80vh;">
+        <div class="hero-bg-glow"></div>
+        <div class="container hero-content">
+            <div class="hero-logo-large">
+                <span class="scheme-badge reveal">April 15 - July 15, 2026</span>
+                <h1 class="main-title" style="font-size: clamp(3rem, 8vw, 6rem);">CCFS 2026</h1>
+                <div class="title-divider"></div>
+                <h2 class="tagline" style="font-size: clamp(1.2rem, 3vw, 2rem);">COMPANIES COMPLIANCE FACILITATION SCHEME</h2>
+            </div>
+            <p class="subtitle max-w-800 mx-auto mt-4 reveal text-lg">Regularize your pending statutory filings with significant fee waivers and immunity from penal actions. A one-time amnesty initiative by the Ministry of Corporate Affairs.</p>
+            <div class="scroll-indicator">
+                <p>Explore Benefits</p>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+        </div>
+    </section>
+
+    <!-- Scheme Overview / About Section -->
+    <section class="section bg-light" id="about">
+        <div class="container">
+            <h2 class="section-title">SCHEME OVERVIEW</h2>
+            <div class="split-layout align-center">
+                <div class="image-side circle-image reveal">
+                    <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80&w=800" alt="Corporate documents representing compliance files">
+                </div>
+                <div class="content-side reveal right">
+                    <h3 class="mb-4">One-Time Amnesty Opportunity</h3>
+                    <p class="mb-5 text-lg text-muted">The CCFS-2026 is designed by the Ministry of Corporate Affairs (MCA) to offer defaulting companies a fresh start. It provides an exclusive window to clear overdue annual returns and financial statements without facing the typical massive additional fees.</p>
+                    <ul class="check-list">
+                        <li><i class="fas fa-calendar-check"></i> <strong>Active Period:</strong> April 15, 2026 to July 15, 2026</li>
+                        <li><i class="fas fa-shield-alt"></i> <strong>Immunity:</strong> Protection from prospective penal actions</li>
+                        <li><i class="fas fa-chart-line"></i> <strong>Objective:</strong> Improved accuracy of the corporate registry</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Benefits Section -->
+    <section class="section" id="benefits">
+        <div class="container">
+            <h2 class="section-title">KEY BENEFITS & RELIEF</h2>
+            <div class="features-grid three-cols">
+                <div class="feature-card reveal" style="--delay: 0.1s">
+                    <div class="icon-wrapper"><i class="fas fa-percentage"></i></div>
+                    <h3>Pending Filings</h3>
+                    <p>File overdue annual returns and financial statements by paying the normal statutory fee plus <strong>only 10%</strong> of the applicable additional fees.</p>
+                </div>
+                <div class="feature-card reveal" style="--delay: 0.2s">
+                    <div class="icon-wrapper"><i class="fas fa-bed"></i></div>
+                    <h3>Dormant Status</h3>
+                    <p>Inactive companies can apply for "Dormant" status under Section 455 by filing e-form MSC-1 at a heavily discounted <strong>50% of the normal filing fee</strong>.</p>
+                </div>
+                <div class="feature-card reveal" style="--delay: 0.3s">
+                    <div class="icon-wrapper"><i class="fas fa-times-circle"></i></div>
+                    <h3>Voluntary Strike-off</h3>
+                    <p>Companies wishing to close down cleanly can apply for voluntary strike-off by filing e-form STK-2 at just <strong>25% of the applicable fee</strong>.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Forms Covered Section -->
+    <section class="section bg-light" id="forms">
+        <div class="container">
+            <h2 class="section-title">ELIGIBLE FORMS</h2>
+            <p class="text-center mb-5 text-muted max-w-800 mx-auto">The scheme covers essential e-forms under both the Companies Act, 2013, and the Companies Act, 1956. Ensure your compliance is up to date.</p>
+            <div class="table-container reveal">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>FORM NUMBER</th>
+                            <th>PURPOSE / FILING DOCUMENT</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="fw-bold">MGT-7 & MGT-7A</td>
+                            <td>Filing Annual Returns (Standard & Small Companies)</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">AOC-4</td>
+                            <td>Financial Statements (including CFS and XBRL versions)</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">ADT-1</td>
+                            <td>Information to the Registrar about Auditor appointment</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">FC-3 & FC-4</td>
+                            <td>Annual accounts/returns of Foreign Companies</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Exceptions Section -->
+    <section class="section dark-section" id="exceptions">
+        <div class="container">
+            <div class="split-layout">
+                <div class="content-side reveal left">
+                    <h2 class="section-title text-white">NON-ELIGIBILITY</h2>
+                    <p class="text-lg text-white mb-4" style="opacity: 0.8">The scheme provides broad coverage, but specific companies are excluded from these benefits.</p>
+                    
+                    <div class="ccfs-alert">
+                        <h4><i class="fas fa-exclamation-triangle"></i> Not Applicable For:</h4>
+                        <ul>
+                            <li class="mb-2">Companies facing a final notice for striking off (Section 248) issued by the RoC.</li>
+                            <li class="mb-2">Companies that have already actively applied for voluntary strike-off.</li>
+                            <li class="mb-2">Companies that have already obtained dormant status.</li>
+                            <li class="mb-2">Companies dissolved via corporate amalgamation.</li>
+                            <li>Vanishing Companies.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="image-side relative reveal right flex-center">
+                    <div style="background: rgba(255,255,255,0.05); padding: 40px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); text-align: center;">
+                        <i class="fas fa-gavel mb-4" style="font-size: 4rem; color: #dc3545;"></i>
+                        <h3 class="text-white">Important Notice</h3>
+                        <p class="text-white" style="opacity: 0.7;">After the scheme concludes on July 15, 2026, Registrars of Companies are mandated to initiate necessary regulatory actions against companies that remain in default.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer" id="contact">
+        <div class="container text-center pt-5 pb-4">
+            <h2 class="footer-title reveal">Act Now • Save Penalties</h2>
+            <div class="footer-divider reveal"></div>
+            <p class="footer-services reveal">Consultancy • Taxation • Strategy • Funding</p>
+            
+            <div class="contact-card reveal">
+                <div class="contact-logo">
+                    <h2>SAKTHI CONSULTANCY</h2>
+                    <p>THE GROWING POWER</p>
+                </div>
+                <div class="contact-details">
+                    <div class="contact-item">
+                        <i class="fas fa-envelope"></i>
+                        <a href="mailto:info@sakthiconsultancy.com">info@sakthiconsultancy.com</a>
+                    </div>
+                    <div class="contact-item address">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <p>FLAT NO 202, RAMCHANDRA NIVAS APARTMENTS,<br>
+                        OPP BANK OF INDIA VENGALRAO NAGAR,<br>
+                        SR NAGAR, HYDERABAD, 500038</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="container flex-between">
+                <p>&copy; <span id="year"></span> Sakthi Consultancy. All Rights Reserved.</p>
+                <div class="social-links">
+                    <a href="https://www.facebook.com/sakthithegrowingpower" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="https://www.instagram.com/sakthi_the_growing_power" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="https://www.linkedin.com/company/sakthi-consultancy-the-growing-power-llp" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="https://twitter.com/sakthi_llp" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><i class="fab fa-x-twitter"></i></a>
+                    <a href="https://www.youtube.com/@SAKTHITHEGROWINGPOWER" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Custom Script -->
+    <script src="/script.js"></script>
+</body>
+</html>
