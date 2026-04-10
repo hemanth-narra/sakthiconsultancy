@@ -927,6 +927,7 @@
                 document.getElementById('p-tax-total-row').style.display = 'flex';
             } else {
                 thTax.style.display = 'none';
+                document.querySelectorAll('.tax-col').forEach(el => el.style.display = 'none');
                 document.getElementById('p-tax-total-row').style.display = 'none';
             }
 
