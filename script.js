@@ -9,13 +9,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Header Scroll Effect ---
     const header = document.querySelector('.header');
     
-    window.addEventListener('scroll', () => {
-        if (window.scrollY > 50) {
-            header.classList.add('scrolled');
-        } else {
-            header.classList.remove('scrolled');
-        }
-    });
+    if (header) {
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+    }
 
     // --- Mobile Menu Toggle ---
     const menuBtn = document.querySelector('.mobile-menu-btn');
@@ -87,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (targetElement) {
                 // Adjust scroll position to account for fixed header
-                const headerHeight = header.offsetHeight;
+                const headerHeight = header ? header.offsetHeight : 70;
                 const targetPosition = targetElement.getBoundingClientRect().top + window.scrollY - headerHeight;
                 
                 window.scrollTo({

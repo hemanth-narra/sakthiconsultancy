@@ -375,7 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Bind Breakdown buttons
             document.querySelectorAll('.view-details-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => loadBreakdownModal(e.target.dataset.empid, e.target.dataset.empname, e.target.dataset.date));
+                btn.addEventListener('click', () => loadBreakdownModal(btn.dataset.empid, btn.dataset.empname, btn.dataset.date));
             });
 
         } catch (err) {
