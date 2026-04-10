@@ -315,9 +315,6 @@
         .invoice-wrapper {
             background: var(--bg-white);
             width: 800px;
-            /* Base size for preview */
-            min-height: 1131px;
-            /* A4 Ratio */
             box-shadow: var(--shadow-lg);
             position: relative;
         }
@@ -325,8 +322,8 @@
         /* The actual invoice content we render to PDF */
         #invoice-document {
             padding: 3rem;
+            padding-bottom: 2.5rem;
             color: var(--text-main);
-            min-height: 100%;
             display: flex;
             flex-direction: column;
         }
@@ -485,7 +482,7 @@
 
         /* Invoice Footer */
         .inv-footer {
-            margin-top: auto;
+            margin-top: 2rem;
             border-top: 1px solid var(--border-color);
             padding-top: 1rem;
             display: flex;
@@ -808,6 +805,20 @@
             // Set default date to today
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('f-inv-date').value = today;
+
+            // Explicitly reset default item row values to prevent browser form restore overriding them
+            const firstRow = document.querySelector('#items-container .item-row');
+            if (firstRow) {
+                const descInput = firstRow.querySelector('.desc');
+                const qtyInput  = firstRow.querySelector('.qty');
+                const rateInput = firstRow.querySelector('.rate');
+                const taxInput  = firstRow.querySelector('.tax');
+                if (descInput && !descInput.value) descInput.value = 'Consulting Services';
+                if (qtyInput  && !qtyInput.value)  qtyInput.value  = '1';
+                if (rateInput && !rateInput.value) rateInput.value = '10000';
+                if (taxInput  && !taxInput.value)  taxInput.value  = '0';
+            }
+
             updatePreview();
         }
 
