@@ -677,7 +677,7 @@
                                         id="p-inv-num">INV-001</span></div>
                                 <div class="inv-meta-row"><span class="inv-meta-label">Date:</span> <span
                                         id="p-inv-date"></span></div>
-                                <div class="inv-meta-row" id="p-due-date-row"><span class="inv-meta-label">Due
+                                <div class="inv-meta-row" id="p-due-date-row" style="display:none;"><span class="inv-meta-label">Due
                                         Date:</span> <span id="p-due-date"></span></div>
                             </div>
                         </div>
@@ -728,7 +728,7 @@
                         </div>
                     </div>
 
-                    <div style="margin-top:1rem; font-size: 0.9rem;">
+                    <div id="p-notes-section" style="margin-top:1rem; font-size: 0.9rem; display:none;">
                         <strong>Notes:</strong><br>
                         <span id="p-notes" style="color:var(--text-muted)"></span>
                     </div>
@@ -864,10 +864,12 @@
             const gstin = document.getElementById('f-client-gstin').value;
 
             document.getElementById('p-client-phone').innerText = phone ? `Phone: ${phone}` : '';
-            document.getElementById('p-client-email').innerText = email ? `${email}` : '';
+            document.getElementById('p-client-email').innerText = email ? `Email: ${email}` : '';
             document.getElementById('p-client-gstin').innerText = gstin ? `GSTIN: ${gstin}` : '';
 
-            document.getElementById('p-notes').innerText = document.getElementById('f-notes').value || '';
+            const notesVal = document.getElementById('f-notes').value || '';
+            document.getElementById('p-notes').innerText = notesVal;
+            document.getElementById('p-notes-section').style.display = notesVal ? 'block' : 'none';
 
             // Calculate items
             const rows = document.querySelectorAll('.item-row');
@@ -897,7 +899,7 @@
                     <td>${desc}</td>
                     <td class="right">${qty}</td>
                     <td class="right">${formatCurrency(rate)}</td>
-                    <td class="right tax-col" style="${taxPct > 0 ? '' : 'display:none;'}">${taxPct}%</td>
+                    <td class="right tax-col" data-has-tax="${taxPct > 0}">${taxPct > 0 ? taxPct + '%' : ''}</td>
                     <td class="right">${formatCurrency(itemTotal)}</td>
                 `;
                 tbody.appendChild(tr);
@@ -907,7 +909,10 @@
             const thTax = document.getElementById('th-tax');
             if (hasAnyTax) {
                 thTax.style.display = 'table-cell';
-                document.querySelectorAll('.tax-col').forEach(el => el.style.display = 'table-cell');
+                document.querySelectorAll('.tax-col').forEach(el => {
+                    // Only show tax cell if this item actually has tax
+                    el.style.display = el.dataset.hasTax === 'true' ? 'table-cell' : 'none';
+                });
                 document.getElementById('p-tax-total-row').style.display = 'flex';
             } else {
                 thTax.style.display = 'none';
