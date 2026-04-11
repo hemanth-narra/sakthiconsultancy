@@ -32,6 +32,7 @@ app.use('/hr', express.static(path.join(__dirname, 'hr')));
 app.use('/invoice', express.static(path.join(__dirname, 'invoice')));
 app.use('/links', express.static(path.join(__dirname, 'links')));
 app.use('/ccfs', express.static(path.join(__dirname, 'ccfs')));
+app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.get('/styles.css', (req, res) => res.sendFile(path.join(__dirname, 'styles.css')));
 app.get('/script.js', (req, res) => res.sendFile(path.join(__dirname, 'script.js')));
 app.get('/favicon.svg', (req, res) => res.sendFile(path.join(__dirname, 'favicon.svg')));
