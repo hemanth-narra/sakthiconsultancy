@@ -143,7 +143,7 @@ app.post('/hr/api/auth/login', (req, res) => {
         if (!validPassword) return res.status(401).json({ error: 'Invalid credentials' });
 
         const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '12h' });
-        res.cookie('hr_token', token, { httpOnly: true, secure: false, maxAge: 12 * 60 * 60 * 1000 });
+        res.cookie('hr_token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', maxAge: 12 * 60 * 60 * 1000 });
         res.json({ message: 'Logged in successfully' });
     });
 });
