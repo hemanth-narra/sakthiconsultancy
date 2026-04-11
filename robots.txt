@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /invoice/
+Disallow: /hr/
+
+Sitemap: https://www.sakthiconsultancy.com/sitemap.xml
