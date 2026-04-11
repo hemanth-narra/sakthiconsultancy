@@ -320,23 +320,6 @@ img {
     padding-top: 80px;
 }
 
-.hero-bg-glow {
-    position: absolute;
-    top: 50%;
-    right: 10%;
-    transform: translateY(-50%);
-    width: 60vh;
-    height: 60vh;
-    background: radial-gradient(circle, rgba(197, 248, 5, 0.15) 0%, rgba(255,255,255,0) 70%);
-    z-index: -1;
-    animation: pulse 4s infinite alternate;
-}
-
-@keyframes pulse {
-    0% { transform: translateY(-50%) scale(1); opacity: 0.6; }
-    100% { transform: translateY(-50%) scale(1.1); opacity: 1; }
-}
-
 .hero-logo-large {
     display: flex;
     flex-direction: column;
