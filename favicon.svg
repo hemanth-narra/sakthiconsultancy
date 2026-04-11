@@ -1,7 +1,17 @@
-<svg width="180" height="64" viewBox="0 0 180 64" xmlns="http://www.w3.org/2000/svg">
-  <g transform="translate(16, 12)">
-      <rect x="0" y="16" width="20" height="24" rx="2" fill="#061B3B" transform="skewX(-15)" />
-      <rect x="14" y="0" width="14" height="14" rx="2" fill="#C5F805" transform="skewX(-15)" />
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- White Background -->
+  <rect width="256" height="256" fill="#FFFFFF"/>
+  
+  <!-- Exactly matched to the CSS layout in index.html -->
+  <g transform="translate(36, 32) scale(6)">
+      <!-- Blue Mark with border-radius: 2px 8px 2px 2px -->
+      <!-- Positioned relative to css: bottom 0, left 0 inside 32x32 container -->
+      <path d="M2,0 L12,0 A8,8 0 0,1 20,8 L20,22 A2,2 0 0,1 18,24 L2,24 A2,2 0 0,1 0,22 L0,2 A2,2 0 0,1 2,0 Z" 
+            fill="#061B3B" transform="translate(10, 20) skewX(-15) translate(-10, -12)" />
+            
+      <!-- Green Mark with border-radius: 2px 8px 2px 2px -->
+      <!-- Positioned relative to css: top 0, right 0 inside 32x32 container -->
+      <path d="M2,0 L6,0 A8,8 0 0,1 14,8 L14,12 A2,2 0 0,1 12,14 L2,14 A2,2 0 0,1 0,12 L0,2 A2,2 0 0,1 2,0 Z" 
+            fill="#C5F805" transform="translate(25, 7) skewX(-15) translate(-7, -7)" />
   </g>
-  <text x="56" y="42" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="28" fill="#061B3B" letter-spacing="1.5">SAKTHI</text>
 </svg>
