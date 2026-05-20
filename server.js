@@ -30,6 +30,7 @@ app.use(cookieParser());
 // Serve specifically only the necessary static directories and files to avoid exposing backend files
 app.use('/hr', express.static(path.join(__dirname, 'hr')));
 app.use('/invoice', express.static(path.join(__dirname, 'invoice')));
+app.use('/quotation', express.static(path.join(__dirname, 'quotation')));
 app.use('/links', express.static(path.join(__dirname, 'links')));
 app.use('/ccfs', express.static(path.join(__dirname, 'ccfs')));
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
