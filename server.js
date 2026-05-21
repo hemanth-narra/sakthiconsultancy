@@ -35,8 +35,16 @@ app.use('/links', express.static(path.join(__dirname, 'links')));
 app.use('/ccfs', express.static(path.join(__dirname, 'ccfs')));
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.get('/styles.css', (req, res) => res.sendFile(path.join(__dirname, 'styles.css')));
+app.get('/service-page.css', (req, res) => res.sendFile(path.join(__dirname, 'service-page.css')));
 app.get('/script.js', (req, res) => res.sendFile(path.join(__dirname, 'script.js')));
 app.get('/favicon.svg', (req, res) => res.sendFile(path.join(__dirname, 'favicon.svg')));
+app.use('/private-limited-company-registration', express.static(path.join(__dirname, 'private-limited-company-registration')));
+app.use('/llp-registration', express.static(path.join(__dirname, 'llp-registration')));
+app.use('/opc-registration', express.static(path.join(__dirname, 'opc-registration')));
+app.use('/startup-registration', express.static(path.join(__dirname, 'startup-registration')));
+app.use('/gst-registration', express.static(path.join(__dirname, 'gst-registration')));
+app.use('/post-incorporation', express.static(path.join(__dirname, 'post-incorporation')));
+app.use('/blog', express.static(path.join(__dirname, 'blog')));
 
 // Initialize SQLite Database
 const dataDir = path.join(__dirname, 'data');
